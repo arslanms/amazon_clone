@@ -22,7 +22,7 @@ CREATE TABLE IF NOT EXISTS `mydb`.`Item` (
   `Product_Name` VARCHAR(100) NOT NULL COMMENT 'Contains the name of the item.',
   `Type` VARCHAR(50) NULL COMMENT 'Contains the type of the item (e.x. Book, Clothing, Computer, etc.)',
   `ItemID` INT UNSIGNED NOT NULL AUTO_INCREMENT,
-  `Product_Desc` VARCHAR(200) NULL COMMENT 'Contains a short description of the item.',
+  `Product_Desc` VARCHAR(1000) NULL COMMENT 'Contains a short description of the item.',
   `Quantity` INT UNSIGNED NOT NULL,
   `Picture` VARCHAR(50) NULL COMMENT 'Contains the file name of the picture (not the picture itself).',
   PRIMARY KEY (`ItemID`))
@@ -30,10 +30,10 @@ ENGINE = InnoDB;
 
 
 -- -----------------------------------------------------
--- Table `mydb`.`Customer`
+-- Table `mydb`.`User`
 -- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `mydb`.`Customer` (
-  `CustomerID` VARCHAR(50) NOT NULL COMMENT 'Holds the ID of this customer. Will be used to identify the customer.',
+CREATE TABLE IF NOT EXISTS `mydb`.`User` (
+  `UserID` VARCHAR(50) NOT NULL,
   `First_Name` VARCHAR(50) NULL,
   `Last Name` VARCHAR(50) NULL,
   `E-mail` VARCHAR(50) NOT NULL COMMENT 'Will be used as the username for logging in.',
@@ -45,7 +45,22 @@ CREATE TABLE IF NOT EXISTS `mydb`.`Customer` (
   `City` VARCHAR(50) NULL,
   `State` CHAR(2) NULL,
   `Country` VARCHAR(50) NULL,
-  PRIMARY KEY (`CustomerID`))
+  `Type_Account` VARCHAR(10) NULL COMMENT 'Either \'Admin\', \'Customer\', or \'Vendor\'',
+  PRIMARY KEY (`UserID`))
+ENGINE = InnoDB;
+
+
+-- -----------------------------------------------------
+-- Table `mydb`.`Customer`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `mydb`.`Customer` (
+  `UserID` VARCHAR(50) NOT NULL COMMENT 'Holds the ID of this customer. Will be used to identify the customer.',
+  PRIMARY KEY (`UserID`),
+  CONSTRAINT `UserID`
+    FOREIGN KEY (`UserID`)
+    REFERENCES `mydb`.`User` (`UserID`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION)
 ENGINE = InnoDB;
 
 
@@ -53,20 +68,16 @@ ENGINE = InnoDB;
 -- Table `mydb`.`Vendor`
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `mydb`.`Vendor` (
-  `VendorID` VARCHAR(50) NOT NULL COMMENT 'This is the ID of the vendor to identify them.',
+  `UserID` VARCHAR(50) NOT NULL COMMENT 'This is the ID of the vendor to identify them.',
   `Name` VARCHAR(50) NULL COMMENT 'Name of the vendor.',
   `Description` VARCHAR(200) NULL COMMENT 'Description of what the vendor sells and stuff.',
-  `E-mail` VARCHAR(50) NOT NULL COMMENT 'Will be used as the username for logging in.',
-  `Date_Joined` DATE NULL,
-  `Phone_Number` VARCHAR(50) NULL,
-  `Password` VARCHAR(100) NOT NULL COMMENT 'Contains an encrypted password of the customer.',
-  `Street` VARCHAR(50) NULL,
-  `ZIP` INT NULL,
-  `City` VARCHAR(50) NULL,
-  `State` CHAR(2) NULL,
-  `Country` VARCHAR(50) NULL,
-  PRIMARY KEY (`VendorID`),
-  UNIQUE INDEX `VendorID_UNIQUE` (`VendorID` ASC))
+  PRIMARY KEY (`UserID`),
+  UNIQUE INDEX `VendorID_UNIQUE` (`UserID` ASC),
+  CONSTRAINT `UserID`
+    FOREIGN KEY (`UserID`)
+    REFERENCES `mydb`.`User` (`UserID`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION)
 ENGINE = InnoDB;
 
 
@@ -93,12 +104,12 @@ CREATE TABLE IF NOT EXISTS `mydb`.`Order` (
   INDEX `VendorID_idx` (`VendorID` ASC),
   CONSTRAINT `CustomerID`
     FOREIGN KEY (`CustomerID`)
-    REFERENCES `mydb`.`Customer` (`CustomerID`)
+    REFERENCES `mydb`.`Customer` (`UserID`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION,
   CONSTRAINT `VendorID`
     FOREIGN KEY (`VendorID`)
-    REFERENCES `mydb`.`Vendor` (`VendorID`)
+    REFERENCES `mydb`.`Vendor` (`UserID`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION)
 ENGINE = InnoDB;
@@ -147,7 +158,7 @@ CREATE TABLE IF NOT EXISTS `mydb`.`Payment` (
   INDEX `CustomerID_idx` (`CustomerID` ASC),
   CONSTRAINT `CustomerID`
     FOREIGN KEY (`CustomerID`)
-    REFERENCES `mydb`.`Customer` (`CustomerID`)
+    REFERENCES `mydb`.`Customer` (`UserID`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION)
 ENGINE = InnoDB;
@@ -171,7 +182,7 @@ CREATE TABLE IF NOT EXISTS `mydb`.`Inventory` (
     ON UPDATE NO ACTION,
   CONSTRAINT `VendorID`
     FOREIGN KEY (`VendorID`)
-    REFERENCES `mydb`.`Vendor` (`VendorID`)
+    REFERENCES `mydb`.`Vendor` (`UserID`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION)
 ENGINE = InnoDB;
@@ -190,7 +201,7 @@ CREATE TABLE IF NOT EXISTS `mydb`.`Shopping Cart` (
   INDEX `ItemID_idx` (`ItemID` ASC),
   CONSTRAINT `CustomerID`
     FOREIGN KEY (`CustomerID`)
-    REFERENCES `mydb`.`Customer` (`CustomerID`)
+    REFERENCES `mydb`.`Customer` (`UserID`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION,
   CONSTRAINT `ItemID`
@@ -205,19 +216,13 @@ ENGINE = InnoDB;
 -- Table `mydb`.`Admin`
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `mydb`.`Admin` (
-  `AdminID` VARCHAR(50) NOT NULL,
-  `First_Name` VARCHAR(50) NULL,
-  `Last Name` VARCHAR(50) NULL,
-  `E-mail` VARCHAR(50) NOT NULL COMMENT 'Will be used as the username for logging in.',
-  `Date_Joined` DATE NULL,
-  `Phone_Number` VARCHAR(50) NULL,
-  `Password` VARCHAR(100) NOT NULL COMMENT 'Contains an encrypted password of the customer.',
-  `Street` VARCHAR(50) NULL,
-  `ZIP` INT NULL,
-  `City` VARCHAR(50) NULL,
-  `State` CHAR(2) NULL,
-  `Country` VARCHAR(50) NULL,
-  PRIMARY KEY (`AdminID`))
+  `UserID` VARCHAR(50) NOT NULL COMMENT 'Contains the unique ID of this admin.',
+  PRIMARY KEY (`UserID`),
+  CONSTRAINT `UserID`
+    FOREIGN KEY (`UserID`)
+    REFERENCES `mydb`.`User` (`UserID`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION)
 ENGINE = InnoDB;
 
 
@@ -232,7 +237,7 @@ CREATE TABLE IF NOT EXISTS `mydb`.`Privilege` (
   INDEX `AdminID_idx` (`AdminID` ASC),
   CONSTRAINT `AdminID`
     FOREIGN KEY (`AdminID`)
-    REFERENCES `mydb`.`Admin` (`AdminID`)
+    REFERENCES `mydb`.`Admin` (`UserID`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION)
 ENGINE = InnoDB;
@@ -256,12 +261,12 @@ CREATE TABLE IF NOT EXISTS `mydb`.`Review` (
   INDEX `OrderID_idx` (`OrderID` ASC),
   CONSTRAINT `CustomerID`
     FOREIGN KEY (`CustomerID`)
-    REFERENCES `mydb`.`Customer` (`CustomerID`)
+    REFERENCES `mydb`.`Customer` (`UserID`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION,
   CONSTRAINT `VendorID`
     FOREIGN KEY (`VendorID`)
-    REFERENCES `mydb`.`Vendor` (`VendorID`)
+    REFERENCES `mydb`.`Vendor` (`UserID`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION,
   CONSTRAINT `OrderID`
@@ -291,7 +296,7 @@ CREATE TABLE IF NOT EXISTS `mydb`.`Return` (
   PRIMARY KEY (`Card_CCV`),
   CONSTRAINT `VendorID`
     FOREIGN KEY (`VendorID`)
-    REFERENCES `mydb`.`Vendor` (`VendorID`)
+    REFERENCES `mydb`.`Vendor` (`UserID`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION)
 ENGINE = InnoDB;
