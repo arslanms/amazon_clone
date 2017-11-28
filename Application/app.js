@@ -597,8 +597,72 @@ app.post('/review', [sanitize('rating').toInt(), sanitize('order_id').toInt()], 
 					res.send({status: 1, msg: "You have successfully left a review."});
 
 				});
+			});
+		}
+	});
+});
+
+app.get('/items', (req, res, next) => {
+
+	let statement = "SELECT * FROM Item";
+
+	db.query(statement, (err, result) => {
+
+		if (err)
+			throw err;
+
+		res.send(result);
+
+	});
+
+});
+
+app.get('/items/:id', (req, res, next) => {
+
+	var id = req.params.id;
+
+	let statement = "SELECT * FROM Item WHERE ItemID = ?";
+
+	db.query(statement, [id], (err, result) => {
+
+		if (err)
+			throw err;
+
+		res.send(result[0]);
 
 
+	});
+
+});
+
+
+app.post('/cart/delete', (req, res, next) => {
+
+	var itemid = req.body.id;
+	var customer = req.user.userid;
+
+	let statement = "SELECT UserID From `Customer` WHERE UserID = ?";
+
+	db.query(statement, [customer], (err, result) => {
+
+		if (err)	
+			throw err;
+		else if (result.length == 0)	{
+			res.send({status:-1, msg: "You are not a customer."});
+		}
+		else {
+
+			let drop_stmnt = "DELETE FROM `Shopping Cart` WHERE ItemID = ?";
+
+			db.query(drop_stmnt, [itemid], (err2, result2) => {
+
+				if (err2)	{
+					db.rollback(() => {
+						res.send({status:-1, msg: "Could not delete from cart."});
+					});
+				}
+
+				res.send({status:1, msg:"Item successfully deleted from cart"});
 
 			});
 
