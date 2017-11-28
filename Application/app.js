@@ -541,7 +541,71 @@ app.post('/checkout', (req, res, next) => {
 		});
 	});
 
-	res.send({status: 1});
+	res.send({status: 1, msg: "Order has been completed."});
+});
+
+app.post('/review', [sanitize('rating').toInt(), sanitize('order_id').toInt()], (req, res, next) => {
+
+	var rating = req.body.rating;
+	var review_text = req.body.review_text;
+	var customer = req.user.userid;
+	var order_id = req.body.order_id;
+
+
+	let check_customer_stmnt = "SELECT UserID FROM Customer WHERE Customer.UserID = ?";
+
+	db.query(check_customer_stmnt, [customer], (err, result) => {
+
+		if (err)	{
+			db.rollback(function() {
+				throw err;
+			});
+		}
+		else if (result.length == 0)	{
+			db.rollback(function() {
+				res.send({status:-1, msg: "This account is not a customer. Cannot leave a review."});
+			});
+		}
+		else {
+
+			let order_stmnt = "SELECT * FROM `Order` WHERE Order.OrderID = ?";
+
+			db.query(order_stmnt, [order_id], (err2, result2) => {
+
+
+				if (err2)	{
+					db.rollback(function() {
+						throw err2;
+					});
+				}
+				
+
+				var vendor = result2[0].VendorID;
+
+
+
+				let review_stmnt = "INSERT INTO Review VALUES (NULL, ?, ?, ?, ?, CURDATE(), ?)";
+
+				db.query(review_stmnt, [customer, vendor, order_id, rating, review_text], (err3, result3) => {
+
+					if (err3)	{
+						db.rollback(function() {
+							throw err3;
+						})
+					}
+
+					res.send({status: 1, msg: "You have successfully left a review."});
+
+				});
+
+
+
+			});
+
+		}
+
+	});
+
 });
 
 passport.serializeUser(function(user, done) {
