@@ -1,0 +1,10 @@
+Changed the Item Name attribute in the Item Table to unique.
+
+Added a vendor foreign key attribute to the Item Table
+
+Must be able to delete an item and have it deleted from every shopping cart with that particular item id.
+
+Need to handle the following cases:
+	- An item that reaches a quantity of 0 must indicate on both the customer and vendor side that the item is out of stock. The vendor should be able to delete the item and it must be deleted from Item, Inventory, and Shopping Cart
+
+Took out order details - merged it with Order because an Order represnets only 1 item.
