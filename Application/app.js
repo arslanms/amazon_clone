@@ -417,6 +417,8 @@ app.post('/checkout', (req, res, next) => {
 
 	let statement_shoppingcart = "SELECT * FROM `Shopping Cart` WHERE CustomerID = ?";
 
+
+
 	db.query(statement_shoppingcart, [customerid], (err, result) => {
 
 		if (err)	{
@@ -456,22 +458,24 @@ app.post('/checkout', (req, res, next) => {
 			PRIMARY KEY (`OrderDetailID`),
 			*/
 
+
+
 			let payment_info = "SELECT * FROM Payment WHERE (Payment.CustomerID = ?) AND (Payment.Card_Num = ?)";
 
 			db.query(payment_info, [customerid, card_num], (err2, result2) => {
 
 				if (err2)	{
 					db.rollback(function() {
-						callback(err2);
+						return callback(err2);
 					});
-				}
-
+				} else {
+				
 
 				var billing_info = result2[0];
 
 				let order_statement = "INSERT INTO `Order`(`OrderID`, `Shipped_Date`, `Ordered_Date`," + 
 				"`Delivery_Type`, `Tracking_Num`, `Shipment_Company`, `VendorID`, `CustomerID`, `Street`, `ZIP`, `City`, `State`, `Country`," +
-				"`ItemID`, `Quantity`) VALUES  (NULL, NULL, CURDATE(), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+				"`ItemID`, `Quantity`, `Reviewed`) VALUES  (NULL, NULL, CURDATE(), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)";
 				var tracking_num = 124545474764;
 				var shipment_company = 'Quick Boys Inc';
 
@@ -481,10 +485,10 @@ app.post('/checkout', (req, res, next) => {
 
 					if(err6)	{
 						db.rollback(function() {
-							callback(err6);
+							return callback(err6);
 						});						
-					}
-
+					} else {
+					
 					var vendor = result6[0].UserID;
 
 				db.query(order_statement, [delivery_type, tracking_num, shipment_company, vendor, customerid,
@@ -494,19 +498,20 @@ app.post('/checkout', (req, res, next) => {
 
 					if (err3)	{
 						db.rollback(function() {
-							callback(err3);
+							return callback(err3);
 						});
 					}
-
+					else {
 					let quantity_statement = "SELECT Quantity FROM Item WHERE ItemID = ?";
 
 					db.query(quantity_statement, [value.ItemID], (err4, result4) => {
 
 						if (err4)	{
 							db.rollback(function() {
-								callback(err4);
+								return callback(err4);
 							});
 						}
+						else {
 
 						var old_quantity = result4[0].Quantity;
 
@@ -519,23 +524,31 @@ app.post('/checkout', (req, res, next) => {
 
 								if (err5)	{
 									db.rollback(function() {
-										callback(err5);
+										return callback(err5);
 									});
+								}
+								else {
+
+									callback();
 								}
 							});
 						}
 						else {
 
-							res.send({status: -1, msg: "Not enough in stock to purchase"});
+							db.rollback(() => {
+								callback();
+							});
 
 						}
-
+					}
 					});
-
+				}
 				}); 
+			}
 			});
+			}
 			});
-			callback();
+			
 		}, function(err)	{
 
 		});
@@ -578,25 +591,40 @@ app.post('/review', [sanitize('rating').toInt(), sanitize('order_id').toInt()], 
 						throw err2;
 					});
 				}
+				else if (result2[0].Reviewed === 1)	{
+					res.send({status: -1, msg: "Sorry you have reviewed already."});
+				}
+				else {
 				
 
-				var vendor = result2[0].VendorID;
+					var vendor = result2[0].VendorID;
 
+					let review_stmnt = "INSERT INTO Review VALUES (NULL, ?, ?, ?, ?, CURDATE(), ?)";
 
+					db.query(review_stmnt, [customer, vendor, order_id, rating, review_text], (err3, result3) => {
 
-				let review_stmnt = "INSERT INTO Review VALUES (NULL, ?, ?, ?, ?, CURDATE(), ?)";
+						if (err3)	{
+							db.rollback(function() {
+								throw err3;
+							});
+						}
 
-				db.query(review_stmnt, [customer, vendor, order_id, rating, review_text], (err3, result3) => {
+						let update_order_stmnt = "UPDATE `Order` SET Order.Reviewed = 1 WHERE Order.OrderID = ?";
 
-					if (err3)	{
-						db.rollback(function() {
-							throw err3;
-						})
-					}
+						db.query(update_order_stmnt, [order_id], (err4, result4) => {
 
-					res.send({status: 1, msg: "You have successfully left a review."});
+							if (err4)	{
+								db.rollback(() => {
+									throw err4;
+								});
+							}
 
-				});
+							res.send({status: 1, msg: "You have successfully left a review."});
+
+						});
+
+					});
+				}
 			});
 		}
 	});
