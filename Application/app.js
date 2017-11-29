@@ -87,29 +87,6 @@ app.get('/', (req, res) => {
 	});
 });
 
-app.get('/user/:id', function(req, res) {
-    var id = req.params.id;
-    let statement = "SELECT * FROM User WHERE User.UserID = ?";
-    db.query(statement, [id], (err, result) =>	{
-    	if (err)
-    		throw err;
-    	res.send(result);
-    });
-});
-
-app.post('/user/:id/update', function(req, res) {
-
-    var street = req.body.street;
-    var id = req.params.id;
-
-    let statement = "UPDATE User SET Street = ? WHERE UserID = ?";
-
-    db.query(statement, [street, id], (err, result) =>	{
-    	if (err)
-    		throw err;
-    	res.send(result);
-    });
-});
 
 //TODO: Need to finish the checks of all the inputs.
 app.post('/register', [check('userid').exists().withMessage('No UserID provided.'), check('first_name').exists().withMessage('No first name provided'),
@@ -188,7 +165,48 @@ app.post('/login', passport.authenticate('local', {successRedirect: '/profile', 
 app.get('/profile', checkAuthentication, (req, res, next) => {
 	console.log(req.user);
 	console.log(req.isAuthenticated());
-	res.send({profile : 1});
+
+	var profile_ret = new Object();
+
+	let profile_stmnt = "SELECT * FROM User WHERE UserID = ?";
+
+	db.query(profile_stmnt, [req.user.userid], (err, result) => {
+
+		if (err)	{
+			res.status(404).send({msg: "Could not find this user."});
+		}
+		else {
+
+			profile_ret.User = result[0];
+			var type = result[0].Type_Account;
+
+			if (type === 'Vendor')	{
+
+				let vendor_stmnt = "SELECT * FROM Vendor WHERE Vendor.UserID = ?";
+
+				db.query(vendor_stmnt, [req.user.userid], (err2, result2) => {
+
+					if (err2)	{
+						res.status(404).send({msg: "Could not find this vendor."});
+					}
+					else {
+						profile_ret.Extra = result2[0];
+
+						res.send(profile_ret);
+					}
+
+				});
+
+			}
+			else {
+
+				profile_ret.Extra = "None";
+				res.send(profile_ret);
+
+			}
+		}
+
+	});
 });
 
 app.get('/logout', (req, res, next) => {
@@ -298,7 +316,7 @@ PRIMARY KEY (`ItemID`))
 		}
 		else {
 
-			let insert_item_statement = "INSERT INTO Item VALUES(?, ?, ?, NULL, ?, ?, ?, ?)";
+			let insert_item_statement = "INSERT INTO Item VALUES(?, ?, ?, NULL, ?, ?, ?, ?, 1)";
 
 			db.query(insert_item_statement, [price, prod_name, type, prod_desc, quantity, picture, userid], (err2, result2) => {
 
@@ -529,7 +547,20 @@ app.post('/checkout', (req, res, next) => {
 								}
 								else {
 
-									callback();
+									let remove_cart_stmnt = "DELETE FROM `Shopping Cart` WHERE CustomerID = ?";
+
+									db.query(remove_cart_stmnt, [customerid], (err7, result7) => {
+
+										if (err7)	{
+											db.rollback(() => {
+												return callback(err7);
+											});
+										}
+										else {
+											callback();
+										}
+
+									});
 								}
 							});
 						}
@@ -598,10 +629,11 @@ app.post('/review', [sanitize('rating').toInt(), sanitize('order_id').toInt()], 
 				
 
 					var vendor = result2[0].VendorID;
+					var itemid = result2[0].ItemID;
 
-					let review_stmnt = "INSERT INTO Review VALUES (NULL, ?, ?, ?, ?, CURDATE(), ?)";
+					let review_stmnt = "INSERT INTO Review VALUES (NULL, ?, ?, ?, ?, CURDATE(), ?, ?)";
 
-					db.query(review_stmnt, [customer, vendor, order_id, rating, review_text], (err3, result3) => {
+					db.query(review_stmnt, [customer, vendor, order_id, rating, review_text, itemid], (err3, result3) => {
 
 						if (err3)	{
 							db.rollback(function() {
@@ -634,12 +666,44 @@ app.get('/items', (req, res, next) => {
 
 	let statement = "SELECT * FROM Item";
 
+	var allitems = new Array();
+
 	db.query(statement, (err, result) => {
 
 		if (err)
 			throw err;
+		else {
+			async.forEachOf(result, function(value, key, callback)	{
 
-		res.send(result);
+				var item_obj = new Object();
+				item_obj.item_desc = value;
+
+				let review_stmnt = "SELECT * FROM Review WHERE Review.ItemID = ?";
+
+				db.query(review_stmnt, [value.ItemID], (err2, result2) => {
+
+					if (err2)	{
+						callback(err2);
+					}
+					else {
+
+						item_obj.reviews = result2;
+
+						allitems.push(item_obj);
+
+						callback();
+
+					}
+
+				});
+
+			}, function(err)	{
+
+				res.send(allitems);
+
+			});
+		}
+
 
 	});
 
@@ -648,6 +712,7 @@ app.get('/items', (req, res, next) => {
 app.get('/items/:id', (req, res, next) => {
 
 	var id = req.params.id;
+	var item_obj = new Object();
 
 	let statement = "SELECT * FROM Item WHERE ItemID = ?";
 
@@ -655,9 +720,27 @@ app.get('/items/:id', (req, res, next) => {
 
 		if (err)
 			throw err;
+		else {
 
-		res.send(result[0]);
+			item_obj.item_desc = result[0];
 
+			let review_stmnt = "SELECT * FROM Review WHERE Review.ItemID = ?";
+
+			db.query(review_stmnt, [result[0].ItemID], (err2, result2) => {
+
+				if (err2)
+					throw err2;
+				else {
+
+					item_obj.reviews = result2;
+
+					res.send(item_obj);
+
+				}
+
+			});
+
+		}
 
 	});
 
@@ -697,6 +780,146 @@ app.post('/cart/delete', (req, res, next) => {
 		}
 
 	});
+
+});
+
+app.get('/profile/:userid', (req, res, next) => {
+
+	var profile_ret = new Object();
+
+	var userid = req.params.userid;
+
+	let profile_stmnt = "SELECT * FROM User WHERE UserID = ?";
+
+	db.query(profile_stmnt, [userid], (err, result) => {
+
+		if (err)	{
+			res.status(404).send({msg: "Could not find this user."});
+		}
+		else {
+
+			profile_ret.User = result[0];
+			var type = result[0].Type_Account;
+
+			if (type === 'Vendor')	{
+
+				let vendor_stmnt = "SELECT * FROM Vendor WHERE Vendor.UserID = ?";
+
+				db.query(vendor_stmnt, [userid], (err2, result2) => {
+
+					if (err2)	{
+						res.status(404).send({msg: "Could not find this vendor."});
+					}
+					else {
+						profile_ret.Extra = result2[0];
+
+						res.send(profile_ret);
+					}
+
+				});
+
+			}
+			else {
+
+				profile_ret.Extra = "None";
+				res.send(profile_ret);
+
+			}
+		}
+
+	});
+});
+
+app.get('/orders', (req, res, next) => {
+
+	var userid = req.user.userid;
+
+	let check_stmnt = "SELECT * FROM Customer WHERE Customer.UserID = ?";
+
+	db.query(check_stmnt, [userid], (err, result) => {
+
+		if (err)
+			throw err;
+		else if (result.length === 0)
+			res.status(404).send({msg: "You are not a customer. Cannot view orders."});
+		else {
+
+			let order_stmnt = "SELECT * FROM `Order` WHERE `Order`.CustomerID = ?";
+
+			db.query(order_stmnt, [userid], (err2, result2) => {
+
+				if (err2)
+					throw err2;
+				else {
+					res.send(result2);
+				}
+
+			});
+
+		}
+
+	});
+
+});
+
+app.post('/items/:id/delete', (req, res, next) => {
+
+	var userid = req.user.userid; //Must be the vendor of this item
+	//Check available bit to 0 (Not available)
+	//Delete it from all shopping carts
+	//Leave all orders with that item alone
+	//Leave it in the inventory 
+
+	var itemid = req.params.id;
+
+	let vendor_check = "SELECT * FROM Item WHERE ItemID = ? AND UserID = ?";
+
+	db.query(vendor_check, [itemid, userid], (err, result) => {
+
+		if (err)	{
+			throw err;
+		}
+		else if (result.length === 0)	{
+			res.status(404).send({msg: "You are not the vendor of this item."});
+		}
+		else {
+			//Update item.available to 0 aka Not available
+
+			let item_update = "UPDATE Item SET Available = 0 WHERE ItemID = ?";
+
+			db.query(item_update, [itemid], (err2, result2) => {
+
+				if (err2)	{
+					db.rollback(() => {
+						res.status(404).send({msg: "Could not make the item unavailable."});
+					});
+				}
+				else {
+					//Delete item from all carts
+
+					let cart_delete = "DELETE FROM `Shopping Cart` WHERE ItemID = ?";
+
+					db.query(cart_delete, [itemid], (err3, result3) => {
+
+						if (err3) {
+							db.rollback(() => {
+								res.status(404).send({msg: "Could not delete from carts."});
+							});
+						}
+						else {
+							res.send({msg: "successfully deleted."});
+						}
+
+					});
+
+				}
+
+			});
+		}
+
+	});
+
+
 
 });
 
