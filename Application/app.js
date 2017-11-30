@@ -747,7 +747,7 @@ app.get('/items/:id', (req, res, next) => {
 });
 
 
-app.post('/cart/delete', (req, res, next) => {
+app.delete('/cart/delete', (req, res, next) => {
 
 	var itemid = req.body.id;
 	var customer = req.user.userid;
@@ -862,7 +862,7 @@ app.get('/orders', (req, res, next) => {
 
 });
 
-app.post('/items/:id/delete', (req, res, next) => {
+app.delete('/items/:id/delete', (req, res, next) => {
 
 	var userid = req.user.userid; //Must be the vendor of this item
 	//Check available bit to 0 (Not available)
@@ -918,10 +918,49 @@ app.post('/items/:id/delete', (req, res, next) => {
 		}
 
 	});
+});
 
+app.post('/items/:id/update', [sanitize('price').toInt(), sanitize('quantity').toInt()], (req, res, next) => {
 
+	var itemid = req.params.id; //Stays constant
+	//Price, Product_Name, Type, ItemID, Product_Desc, Quantity, Picture, UserID, Available
+	var price = req.body.price;
+	var prod_name = req.body.prod_name; //constant
+	var type = req.body.type;
+	var prod_desc = req.body.prod_desc;
+	var quantity = req.body.quantity;
+	var picture = req.body.picture;
+	var userid = req.body.userid; //Stays constant
+	var availabe = req.body.available; //Not allowed to change
+	var curr_user = req.user.userid;
+
+	if (curr_user === userid)	{
+
+		let update_stmnt = "UPDATE Item SET Price = ?, Product_Name = ?, Type = ?, Product_Desc = ?, Quantity = ?, Picture = ? WHERE ItemID = ? AND UserID = ?";
+
+		db.query(update_stmnt, [price, prod_name, type, prod_desc, quantity, picture, itemid, userid], (err, result) => {
+
+			if (err)	{
+				db.rollback(() => {
+					throw err;
+				});
+			}
+			else {
+				res.send({res: result, msg: "Completed your item update"});
+
+			}
+
+		});
+
+	}
+	else {
+
+		res.status(404).send({msg: "Sorry, you are not the vendor of this item"});
+
+	}
 
 });
+
 
 passport.serializeUser(function(user, done) {
 	done(null, user);
