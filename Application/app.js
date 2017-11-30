@@ -6,6 +6,9 @@ var passport = require('passport');
 var LocalStrategy = require('passport-local').Strategy;
 var MySQLStore = require('express-mysql-session')(session);
 var async = require('async');
+var bcrypt = require('bcryptjs');
+
+const salt_rounds = 10;
 
 var app = express();
 
@@ -79,12 +82,7 @@ passport.use(new LocalStrategy(
 
 app.get('/', (req, res) => {
 	
-	let statement = "SELECT * FROM Item";
-	db.query(statement, (err, result) => {
-		if (err)
-			throw err;
-		res.send(result);
-	});
+	res.send({msg: "Home page"});
 });
 
 
@@ -119,7 +117,10 @@ app.post('/register', [check('userid').exists().withMessage('No UserID provided.
 		let statemenet = "INSERT INTO User VALUES (?,?,?,?,CURDATE(),?,?,?,?,?,?,?,?)";
 		var reg_return = new Object();
 
-		db.query(statemenet, [userid, first_name, last_name, email, phone, password, address, zip, city, state, country, type], (err, result) => {
+		bcrypt.hash(password, salt_rounds, function(err, hash) {
+
+
+		db.query(statemenet, [userid, first_name, last_name, email, phone, hash, address, zip, city, state, country, type], (err, result) => {
 			if (err)
 				throw err;
 			reg_return.User = result;
@@ -157,6 +158,7 @@ app.post('/register', [check('userid').exists().withMessage('No UserID provided.
 
 			
 		});
+			});
 	}
 });
 
@@ -747,7 +749,7 @@ app.get('/items/:id', (req, res, next) => {
 });
 
 
-app.delete('/cart/delete', (req, res, next) => {
+app.delete('/cart', (req, res, next) => {
 
 	var itemid = req.body.id;
 	var customer = req.user.userid;
@@ -862,7 +864,7 @@ app.get('/orders', (req, res, next) => {
 
 });
 
-app.delete('/items/:id/delete', (req, res, next) => {
+app.delete('/items/:id', (req, res, next) => {
 
 	var userid = req.user.userid; //Must be the vendor of this item
 	//Check available bit to 0 (Not available)
@@ -920,7 +922,7 @@ app.delete('/items/:id/delete', (req, res, next) => {
 	});
 });
 
-app.post('/items/:id/update', [sanitize('price').toInt(), sanitize('quantity').toInt()], (req, res, next) => {
+app.put('/items/:id', [sanitize('price').toInt(), sanitize('quantity').toInt()], (req, res, next) => {
 
 	var itemid = req.params.id; //Stays constant
 	//Price, Product_Name, Type, ItemID, Product_Desc, Quantity, Picture, UserID, Available
@@ -961,6 +963,78 @@ app.post('/items/:id/update', [sanitize('price').toInt(), sanitize('quantity').t
 
 });
 
+app.put('/profile', [checkAuthentication, sanitize('zip').toInt()], (req, res, next) => {
+
+	var userid = req.user.userid;
+
+	var first_name = req.body.first_name;
+	var last_name = req.body.last_name;
+	var email = req.body.email;
+	var phone = req.body.phone;
+	var password = req.body.password;
+	var street = req.body.street;
+	var city = req.body.city;
+	var zip = req.body.zip;
+	var state = req.body.state;
+	var country = req.body.country;
+
+	let acc_type = "SELECT * FROM User WHERE UserID = ?";
+
+	db.query(acc_type, [userid], (err, result) => {
+
+		if (err)
+			throw err;
+		else {
+			var type = result[0].Type;
+
+			let customer_update = "UPDATE User SET First_Name = ?,Last_Name = ?,`E-mail` = ?,Phone_Number = ?,Password = ?"+
+					",Street = ?,City = ?,ZIP = ?,State = ?,Country = ? WHERE UserID = ?";
+
+			db.query(customer_update, [first_name, last_name, email, phone, password, street, city, zip, state, country, userid], (err2, result2) => {
+
+				if (err2) {
+					db.rollback(() => {
+						throw err2;
+					});
+				}
+				else {
+
+					console.log(type);
+
+					if (type === 'Vendor')	{
+
+						var store_name = req.body.store_name;
+						var store_desc = req.body.store_desc;
+
+						let vendor_update = "UPDATE Vendor SET Name = ?,Description = ? WHERE UserID = ?";
+
+						db.query(vendor_update, [store_name, store_desc, userid], (err3, result3) => {
+
+							if (err3)	{
+								db.rollback(() => {
+									throw err3;	
+								})
+							}
+							else {
+								res.send({msg: "Completed Vendor update"});
+							}
+
+						});
+
+					}
+					else {
+						res.send({msg: "Updated Customer profile"});
+					}
+
+				}
+
+			});
+
+		}
+
+	});
+
+});
 
 passport.serializeUser(function(user, done) {
 	done(null, user);
