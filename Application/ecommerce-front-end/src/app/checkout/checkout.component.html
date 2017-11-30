@@ -1,0 +1,194 @@
+
+
+<body>
+<form (submit)="placeOrder($event)">
+  <div class="container-fluid">
+    <div class="page-header">
+      <h1>Checkout</h1>
+    </div>
+    <div class="row">
+      <div class="col-xs-12">
+        <h3>Ship my order to</h3>
+        <div class="list-group">
+          <div class="list-group-item">
+            <div class="list-group-item-heading">
+              <div class="row radio">
+                <div class="col-xs-3">
+                  <label>
+                  <input type="radio" name="optionShipp" id="optionShipp1" value="option2" checked="false">
+                  <span id="hard-address-street">1509 Latona St</span>
+                  </label>
+                </div>
+                <div class="col-xs-5">
+                  <dl class="dl-small">
+                    <dt>Miguel Perez</dt>
+                    <dd>1509 Latona St, Philadelphia, PA 19146 </dd>
+                  </dl>
+                  <button class="btn btn-sm">Edit</button>
+                  <button class="btn btn-sm btn-link">Delete this address</button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="list-group-item">
+            <div class="list-group-item-heading">
+              <div class="row">
+                <div class="col-xs-3">
+                  <div class="radio">
+                    <label>
+                    <input type="radio" name="optionShipp" id="optionShipp2" value="option2" checked="false">
+                    A new address
+                    </label>
+                  </div>
+                </div>
+                <div class="col-xs-9">
+                  <form role="form" class="">
+                    <div class="form-group">
+                      <label for="inputname">Name</label>
+                      <input type="text" class="form-control form-control-large" id="inputname" placeholder="Enter name">
+                    </div>
+                    <div class="form-group">
+                      <label for="inputAddress1">Street address 1</label>
+                      <input type="text" class="form-control form-control-large" id="inputAddress1" placeholder="Enter address">
+                    </div>
+                    <div class="form-group">
+                      <label for="inputAddress2">Street address 2</label>
+                      <input type="text" class="form-control form-control-large" id="inputAddress2" placeholder="Enter address">
+                    </div>
+                    <div class="row">
+                      <div class="col-xs-3">
+                        <div class="form-group">
+                          <label for="inputZip">ZIP Code</label>
+                          <input type="text" class="form-control form-control-small" id="inputZip" placeholder="Enter zip">
+                        </div>
+                      </div>
+                      <div class="col-xs-9">
+                        <div class="form-group">
+                          <label for="inputCity">City</label>
+                          <input type="text" class="form-control" id="inputCity" placeholder="Enter city">
+                        </div>
+                      </div>
+                    </div>
+                    <div class="form-group">
+                      <label for="inputState" class="control-label">State</label>
+                      <select class="form-control form-control-large">
+                        <option>Select state</option>
+                      </select>
+                    </div>
+                  </form>
+                  <button class="btn btn-sm">Save Address</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <h3>I'll pay with&hellip;</h3>
+        <div class="list-group">
+          <div class="list-group-item">
+            <div class="list-group-item-heading">
+              <div class="row radio">
+                <div class="col-xs-3">
+                  <label>
+                  <input type="radio" name="optionsRadios" id="optionsRadios2" value="option2" checked>
+                  My Visa Card
+                  </label>
+                </div>
+                <div class="col-xs-9">
+                  <div class="row">
+                    <div class="col-xs-4">
+                      <dl class="dl-small">
+                        <dt>Credit Card Number</dt>
+                        <dd>**********1111</dd>
+                      </dl>
+                    </div>
+                    <div class="col-xs-2">
+                      <dl class="dl-small">
+                        <dt>Expiration</dt>
+                        <dd>07/2016</dd>
+                      </dl>
+                    </div>
+                    <div class="col-xs-6">
+                      <dl class="dl-small">
+                        <dt>Billing Address</dt>
+                        <dd>1509 Latona St, Philadelphia, PA 19146 </dd>
+                      </dl>
+                    </div>
+                  </div>
+                  <button class="btn btn-sm">Edit</button>
+                  <button class="btn btn-sm btn-link">Delete this card</button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="list-group-item">
+            <div class="list-group-item-heading">
+              <div class="row radio">
+                <div class="col-xs-3">
+                  <label>
+                  <input type="radio" name="optionsRadios" id="optionsRadios2" value="option2" checked>
+                  New Card
+                  </label>
+                </div>
+                <div class="col-xs-9">
+                  <div class="row">
+                    <div class="col-xs-4">
+                      <dl class="dl-small">
+                        <dt>Credit Card Number</dt>
+                        <dd><input type="text" placeholder="Card Number"/></dd>
+                      </dl>
+                    </div>
+                    <div class="col-xs-2">
+                      <dl class="dl-small">
+                        <dt>Expiration</dt>
+                        <dd>
+                          <div class="input-group">
+                            <select>
+                              <option>01</option>
+                              <option>02</option>
+                              <option>03</option>
+                              <option>04</option>
+                              <option>05</option>
+                              <option>06</option>
+                              <option>07</option>
+                              <option>08</option>
+                              <option>09</option>
+                              <option>10</option>
+                              <option>11</option>
+                              <option>12</option>
+                            </select>
+                            <select>
+                              <option>2017</option>
+                              <option>2018</option>
+                              <option>2019</option>
+                              <option>2020</option>
+                              <option>2021</option>
+                              <option>2022</option>
+                            </select>
+                          </div>
+                        </dd>
+                      </dl>
+                    </div>
+                    <div class="col-xs-6">
+                      <dl class="dl-small">
+                        <dt>Billing Address</dt>
+                        <dd><input type="text" placeholder="Address"/></dd>
+                        <dd><input type="text" placeholder="City"/></dd>
+                        <dd><input type="text" placeholder="State"/></dd>
+                        <dd><input type="text" placeholder="Zip"/></dd>
+                      </dl>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="well">
+          <button type="button submit" class="btn btn-primary btn-lg btn-block">Place Order</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  </form>
+</body>
+
