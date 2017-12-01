@@ -1,0 +1,42 @@
+Database changes:
+
+Item:
+	Product_Name has to be unique
+	Added a foreign key to the vendorID.
+	
+User:
+	Changed 'Last Name' to 'Last_Name'
+	
+Customer:
+	No changes.
+	
+Vendor:
+	No changes.
+	
+Order:
+OrderDetails:
+	Dropped OrderDetails table and added the information to Order.
+	Contains the ItemID and the Quantity.
+	Added a Reviewed attribute that indicates if the order has been reviewed or not.
+	
+Payment:
+	No changes.
+	
+Inventory:
+	No changes.
+	
+Shopping Cart:
+	No changes.
+	
+Review:
+	Removed the upvotes attribute because I can't keep track of it easily.
+	
+Return:
+	No changes.
+	
+Privilege:
+	No changes.
+	
+Admin:
+	No changes.
+	
