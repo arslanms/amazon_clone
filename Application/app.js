@@ -7,6 +7,7 @@ var LocalStrategy = require('passport-local').Strategy;
 var MySQLStore = require('express-mysql-session')(session);
 var async = require('async');
 var bcrypt = require('bcryptjs');
+var cors = require('cors')
 
 const salt_rounds = 10;
 
@@ -20,6 +21,17 @@ var { check, validationResult } = require('express-validator/check');
 var { matchedData, sanitize } = require('express-validator/filter');
 
 app.use(cookieParser());
+
+var cors_config = {
+
+	origin : '*',
+	methods: 'GET,PUT,POST,DELETE',
+	allowedHeaders: 'Content-Type,Authorization',
+	credentials: true
+};
+
+app.use(cors(cors_config));
+
 
 var options = {
     host: 'localhost',
@@ -65,17 +77,22 @@ passport.use(new LocalStrategy(
   		db.query(statement, [username], (err, result) => {
   			if (err)
   				throw err;
-
-  			if (result.length === 0)
+  			else if (result.length === 0)	{
   				return done(null, false);
+  			}
   			else {
+
   				var db_password = result[0].Password;
 
-	  			if (db_password === password)
-  					return done(null, {userid : username});
-
-  				return done(null, false);
-  			}  			
+  				bcrypt.compare(password,db_password, function(err2, res) {
+  					if (res)	{
+  						return done(null, {userid : username});
+  					}
+  					else {
+  						return done(null, false);
+  					}
+				});
+  			}  			 			
   		});
     }
 ));
@@ -318,7 +335,7 @@ PRIMARY KEY (`ItemID`))
 		}
 		else {
 
-			let insert_item_statement = "INSERT INTO Item VALUES(?, ?, ?, NULL, ?, ?, ?, ?, 1)";
+			let insert_item_statement = "INSERT INTO Item VALUES(?, ?, ?, NULL, ?, ?, ?, ?)";
 
 			db.query(insert_item_statement, [price, prod_name, type, prod_desc, quantity, picture, userid], (err2, result2) => {
 
@@ -600,9 +617,11 @@ app.post('/review', [sanitize('rating').toInt(), sanitize('order_id').toInt()], 
 
 	let check_customer_stmnt = "SELECT UserID FROM Customer WHERE Customer.UserID = ?";
 
+
 	db.query(check_customer_stmnt, [customer], (err, result) => {
 
 		if (err)	{
+			console.log("HERE");
 			db.rollback(function() {
 				throw err;
 			});
@@ -620,6 +639,7 @@ app.post('/review', [sanitize('rating').toInt(), sanitize('order_id').toInt()], 
 
 
 				if (err2)	{
+					console.log("HERE");
 					db.rollback(function() {
 						throw err2;
 					});
@@ -638,24 +658,29 @@ app.post('/review', [sanitize('rating').toInt(), sanitize('order_id').toInt()], 
 					db.query(review_stmnt, [customer, vendor, order_id, rating, review_text, itemid], (err3, result3) => {
 
 						if (err3)	{
+							console.log("HERE");
 							db.rollback(function() {
 								throw err3;
 							});
 						}
+						else {
+							let update_order_stmnt = "UPDATE `Order` SET Order.Reviewed = 1 WHERE Order.OrderID = ?";
 
-						let update_order_stmnt = "UPDATE `Order` SET Order.Reviewed = 1 WHERE Order.OrderID = ?";
+							db.query(update_order_stmnt, [order_id], (err4, result4) => {
 
-						db.query(update_order_stmnt, [order_id], (err4, result4) => {
+								if (err4)	{
+									console.log("HERE");
+									db.rollback(() => {
+										throw err4;
+									});
+								}
 
-							if (err4)	{
-								db.rollback(() => {
-									throw err4;
-								});
-							}
+								res.send({status: 1, msg: "You have successfully left a review."});
 
-							res.send({status: 1, msg: "You have successfully left a review."});
+							});
+						}
 
-						});
+						
 
 					});
 				}
