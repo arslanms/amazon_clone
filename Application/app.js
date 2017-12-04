@@ -26,11 +26,13 @@ var cors_config = {
 
 	origin : '*',
 	methods: 'GET,PUT,POST,DELETE',
-	allowedHeaders: 'Content-Type,Authorization',
-	credentials: true
+	allowedHeaders: 'X-Requested-With, X-HTTP-Method-Override, Content-Type, Accept',
+	credentials: false
 };
 
 app.use(cors(cors_config));
+
+app.options('*', cors(cors_config));
 
 
 var options = {
