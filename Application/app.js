@@ -24,10 +24,10 @@ app.use(cookieParser());
 
 var cors_config = {
 
-	origin : '*',
+	origin : 'http://localhost:4200',
 	methods: 'GET,PUT,POST,DELETE',
 	allowedHeaders: 'X-Requested-With, X-HTTP-Method-Override, Content-Type, Accept',
-	credentials: false
+	credentials: true
 };
 
 app.use(cors(cors_config));
@@ -91,6 +91,7 @@ passport.use(new LocalStrategy(
   						return done(null, {userid : username});
   					}
   					else {
+  						console.log("Res3", res);
   						return done(null, false);
   					}
 				});
@@ -100,8 +101,7 @@ passport.use(new LocalStrategy(
 ));
 
 app.get('/', (req, res) => {
-	
-	res.send({msg: "Home page"});
+	res.send({msg: "/ Page"});
 });
 
 
@@ -116,7 +116,7 @@ app.post('/register', [check('userid').exists().withMessage('No UserID provided.
 	sanitize('zip').toInt()], (req, res, next) =>	{
 	var errors = validationResult(req);
 
-	console.log(req.body);
+	//console.log(req.body);
 
 	if (!errors.isEmpty()) {
 		//return res.status(404).send("Was not able to register");
@@ -185,11 +185,12 @@ app.post('/register', [check('userid').exists().withMessage('No UserID provided.
 	}
 });
 
-app.post('/login', passport.authenticate('local', {successRedirect: '/profile', failureRedirec: '/login'}));
+app.post('/login', passport.authenticate('local', {successRedirect: '/profile', failureRedirec: '/'}));
 
 app.get('/profile', checkAuthentication, (req, res, next) => {
 	console.log(req.user);
 	console.log(req.isAuthenticated());
+
 
 	var profile_ret = new Object();
 
