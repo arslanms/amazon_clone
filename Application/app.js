@@ -26,7 +26,6 @@ var cors_config = {
 
 	origin : 'http://localhost:4200',
 	methods: 'GET,PUT,POST,DELETE',
-	allowedHeaders: 'X-Requested-With, X-HTTP-Method-Override, Content-Type, Accept',
 	credentials: true
 };
 
@@ -50,7 +49,7 @@ app.use(session({
   resave: false,
   saveUninitialized: false,
   store: sessionStore
-}))
+}));
 
 app.use(passport.initialize());
 app.use(passport.session());
@@ -237,10 +236,15 @@ app.get('/profile', checkAuthentication, (req, res, next) => {
 
 app.get('/logout', (req, res, next) => {
 	req.logout();
-	req.session.destroy(() => {
+	req.session.destroy((err) => {
 		res.clearCookie('connect.sid');
 		res.redirect('/');
 	});
+	
+/*	req.session.destroy(function(err) {
+  		// cannot access session here
+  		res.redirect('/');
+	});*/
 });
 
 app.post('/cart', [sanitize('itemid').toInt(), sanitize('quantity').toInt()],(req, res, next) => {
@@ -399,11 +403,47 @@ app.get('/cart', (req, res, next) => {
 	var customerid = req.user.userid;
 	let statement = "SELECT * FROM `Shopping Cart` WHERE CustomerID = ?";
 
+	
+
 	db.query(statement, [customerid], (err, result) => {
 		if (err)
 			throw err;
+		else {
 
-		res.send(result);
+			var ret_arr = Array();
+
+
+			async.forEachOf(result, function(value, key, callback) {
+
+				let item_info = "SELECT * FROM `Item` WHERE `Item`.`ItemID` = ?"
+
+				var ret_obj = Object();
+				ret_obj.Cart = value;
+
+				db.query(item_info, [value.ItemID], (err2, result2) => {
+
+					if (err2)	{
+						callback(err2);
+					}
+					else {
+
+						ret_obj.Item = result2[0];
+
+						console.log(ret_obj);
+
+						ret_arr.push(ret_obj);
+
+						callback();
+
+					}
+
+
+				});
+
+			}, function(error) {
+				res.send(ret_arr);
+			});
+		}
 	});
 
 });
@@ -782,6 +822,7 @@ app.get('/items/:id', (req, res, next) => {
 
 
 app.delete('/cart', (req, res, next) => {
+
 
 	var itemid = req.body.id;
 	var customer = req.user.userid;
