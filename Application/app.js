@@ -115,7 +115,11 @@ app.post('/register', [check('userid').exists().withMessage('No UserID provided.
 	check('state').exists().withMessage('No state provided').isLength({max:2}).withMessage('State must be 2 characters.'),
 	sanitize('zip').toInt()], (req, res, next) =>	{
 	var errors = validationResult(req);
+
+	console.log(req.body);
+
 	if (!errors.isEmpty()) {
+		//return res.status(404).send("Was not able to register");
 		return res.status(422).json({ errors: errors.mapped() });
 	}
 	else	{
