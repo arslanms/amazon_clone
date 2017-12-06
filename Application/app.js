@@ -429,8 +429,6 @@ app.get('/cart', (req, res, next) => {
 
 						ret_obj.Item = result2[0];
 
-						console.log(ret_obj);
-
 						ret_arr.push(ret_obj);
 
 						callback();
@@ -1104,6 +1102,40 @@ app.put('/profile', [checkAuthentication, sanitize('zip').toInt()], (req, res, n
 			});
 
 		}
+
+	});
+
+});
+
+app.put('/cart', (req, res, next) => {
+
+
+
+	var shopping_cart = req.body;
+
+
+
+	async.forEachOf(shopping_cart, function(value, key, callback)	{
+
+		var cartid = value.Cart.CartID;
+		var quantity = value.Cart.Quantity;
+
+		let cart_update = "UPDATE `Shopping Cart` SET Quantity = ? WHERE CartID = ?";
+
+		db.query(cart_update, [quantity, cartid], (err, result) => {
+
+			if (err)	{
+				callback(err);
+			}
+			else {
+				callback();
+			}
+
+		});
+
+	}, function(err)	{
+
+		res.send({msg : "OK"});
 
 	});
 
