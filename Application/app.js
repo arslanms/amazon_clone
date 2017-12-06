@@ -819,10 +819,10 @@ app.get('/items/:id', (req, res, next) => {
 });
 
 
-app.delete('/cart', (req, res, next) => {
+app.post('/cart/delete', (req, res, next) => {
 
 
-	var itemid = req.body.id;
+	var cartid = req.body.cartid;
 	var customer = req.user.userid;
 
 	let statement = "SELECT UserID From `Customer` WHERE UserID = ?";
@@ -836,9 +836,9 @@ app.delete('/cart', (req, res, next) => {
 		}
 		else {
 
-			let drop_stmnt = "DELETE FROM `Shopping Cart` WHERE ItemID = ?";
+			let drop_stmnt = "DELETE FROM `Shopping Cart` WHERE CartID = ?";
 
-			db.query(drop_stmnt, [itemid], (err2, result2) => {
+			db.query(drop_stmnt, [cartid], (err2, result2) => {
 
 				if (err2)	{
 					db.rollback(() => {
