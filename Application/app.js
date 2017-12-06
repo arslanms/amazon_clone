@@ -272,7 +272,7 @@ app.post('/cart', [sanitize('itemid').toInt(), sanitize('quantity').toInt()],(re
       		});
 		}
 		else if (result.length === 0)	{
-			res.send({error: "Is not a customer"});
+			res.send({msg: "Is not a customer"});
 		}
 		else {
 
@@ -288,24 +288,67 @@ app.post('/cart', [sanitize('itemid').toInt(), sanitize('quantity').toInt()],(re
 
 				var current_quantity = result2[0].Quantity;
 
-				if (current_quantity - quantity >= 0)	{
-					let statement_add_to_cart = "INSERT INTO `Shopping Cart` VALUES(?, ?, ?, 0)";
+				let cart_quantity_check = "SELECT Quantity FROM `Shopping Cart` WHERE ItemID = ? AND CustomerID = ?";
 
-					db.query(statement_add_to_cart, [itemid, userid, quantity], (err3, result3) => {
+				db.query(cart_quantity_check, [itemid, userid], (err4, result4) => {
 
-						if(err3) {
-							return db.rollback(function() {
-        						throw err3;
-      						});
+					if (err4)	{
+						return db.rollback(function() {
+							throw err4;
+						});
+					}
+					else if (result4.length === 0)	{
+
+						if (current_quantity - quantity >= 0) {
+
+							let statement_add_to_cart_2 = "INSERT INTO `Shopping Cart` VALUES(?, ?, ?, 0)";
+
+							db.query(statement_add_to_cart_2, [itemid, userid, quantity], (err5, result5) => {
+
+								if (err5)	{
+									return db.rollback(function() {
+										throw err5;
+									});
+								}
+								else {
+									res.send(result5);
+								}
+
+							});
+
+						}
+						else {
+							res.status(404).send({msg : "Not enough quantity"});
 						}
 
-						res.send(result3);
+					}
+					else {
 
-					});
-				}
-				else {
-					res.status(404).send({error:"Not enough quantity"});
-				}
+						var cart_quantity = result4[0].Quantity;
+
+						if (current_quantity - (quantity + cart_quantity) >= 0)	{
+							let statement_add_to_cart = "UPDATE `Shopping Cart` SET Quantity = ? WHERE ItemID = ? AND CustomerID = ?";
+
+							db.query(statement_add_to_cart, [quantity + cart_quantity, itemid, userid], (err3, result3) => {
+
+								if(err3) {
+									return db.rollback(function() {
+        								throw err3;
+      								});
+								}
+								else {
+									res.send(result3);
+								}
+
+
+							});
+						}
+						else {
+							res.status(404).send({msg:"Not enough quantity"});
+						}
+
+					}
+				});
 			});
 		}
 	});
