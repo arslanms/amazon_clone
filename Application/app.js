@@ -967,7 +967,42 @@ app.get('/orders', (req, res, next) => {
 				if (err2)
 					throw err2;
 				else {
-					res.send(result2);
+					//res.send(result2);
+
+					var order_ret = Array();
+
+					async.forEachOf(result2, function(value, key, callback)	{
+
+						var order_ret_obj = Object();
+
+						var itemid = value.ItemID;
+
+						order_ret_obj.Order = value;
+
+						let item_info_stmnt = "SELECT * FROM Item WHERE ItemID = ?"
+
+						db.query(item_info_stmnt, [itemid], (err3, result3) => {
+
+							if (err3)	{
+								db.rollback(() => {
+									callback(err3);
+								});
+							}
+							else {
+
+								order_ret_obj.Item = result3[0];
+								order_ret.push(order_ret_obj);
+								callback();
+
+							}
+
+						});
+
+					}, function(err4)	{
+
+						res.send(order_ret);
+
+					});
 				}
 
 			});
