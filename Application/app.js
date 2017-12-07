@@ -777,6 +777,40 @@ app.post('/review', [sanitize('rating').toInt(), sanitize('order_id').toInt()], 
 	});
 });
 
+app.get('/review/:id', (req, res, next) => {
+
+	var orderid = req.params.id;
+
+	let order_stmnt = "SELECT * FROM `Order` WHERE OrderID = ?";
+
+	db.query(order_stmnt, [orderid], (err, result) => {
+
+		if (err)	{
+			throw err;
+		}
+		else {
+
+			var itemid = result[0].ItemID;
+
+			let item_stmnt = "SELECT * FROM Item WHERE ItemID = ?";
+
+			db.query(item_stmnt, [itemid], (err2, result2) => {
+
+				if (err2)	{
+					throw err2;
+				}
+				else {
+					res.send(result2[0]);
+				}
+
+			});
+
+		}
+
+	});
+
+});
+
 app.get('/items', (req, res, next) => {
 
 	let statement = "SELECT * FROM Item";
