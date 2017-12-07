@@ -389,7 +389,7 @@ PRIMARY KEY (`ItemID`))
 		}
 		else {
 
-			let insert_item_statement = "INSERT INTO Item VALUES(?, ?, ?, NULL, ?, ?, ?, ?)";
+			let insert_item_statement = "INSERT INTO Item VALUES(?, ?, ?, NULL, ?, ?, ?, ?, 1)";
 
 			db.query(insert_item_statement, [price, prod_name, type, prod_desc, quantity, picture, userid], (err2, result2) => {
 
@@ -449,6 +449,54 @@ app.get('/cart', (req, res, next) => {
 	
 
 	db.query(statement, [customerid], (err, result) => {
+		if (err)
+			throw err;
+		else {
+
+			var ret_arr = Array();
+
+
+			async.forEachOf(result, function(value, key, callback) {
+
+				let item_info = "SELECT * FROM `Item` WHERE `Item`.`ItemID` = ?"
+
+				var ret_obj = Object();
+				ret_obj.Cart = value;
+
+				db.query(item_info, [value.ItemID], (err2, result2) => {
+
+					if (err2)	{
+						callback(err2);
+					}
+					else {
+
+						ret_obj.Item = result2[0];
+
+						ret_arr.push(ret_obj);
+
+						callback();
+
+					}
+
+
+				});
+
+			}, function(error) {
+				res.send(ret_arr);
+			});
+		}
+	});
+
+});
+
+app.get('/inventory', (req, res, next) => {
+
+	var vendorid = req.user.userid;
+	let statement = "SELECT * FROM Inventory WHERE VendorID = ?";
+
+	
+
+	db.query(statement, [vendorid], (err, result) => {
 		if (err)
 			throw err;
 		else {
@@ -1049,7 +1097,8 @@ app.get('/orders', (req, res, next) => {
 
 app.delete('/items/:id', (req, res, next) => {
 
-	var userid = req.user.userid; //Must be the vendor of this item
+	var userid = req.user.userid; 
+	//Must be the vendor of this item
 	//Check available bit to 0 (Not available)
 	//Delete it from all shopping carts
 	//Leave all orders with that item alone

@@ -3,6 +3,7 @@ Database changes:
 Item:
 	Product_Name has to be unique
 	Added a foreign key to the vendorID.
+	Add the Available attribute that indicates if the item is available.
 	
 User:
 	Changed 'Last Name' to 'Last_Name'
@@ -30,6 +31,7 @@ Shopping Cart:
 	
 Review:
 	Removed the upvotes attribute because I can't keep track of it easily.
+	Need to add the ItemID attribute to the end.
 	
 Return:
 	No changes.
