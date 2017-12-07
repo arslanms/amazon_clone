@@ -1195,6 +1195,52 @@ app.put('/items/:id', [sanitize('price').toInt(), sanitize('quantity').toInt()],
 
 });
 
+app.post('/available/:id', (req, res, next) => {
+
+	var userid = req.user.userid; 
+	//Must be the vendor of this item
+	//Check available bit to 0 (Not available)
+	//Delete it from all shopping carts
+	//Leave all orders with that item alone
+	//Leave it in the inventory 
+
+	var itemid = req.params.id;
+
+	let vendor_check = "SELECT * FROM Item WHERE ItemID = ? AND UserID = ?";
+
+	db.query(vendor_check, [itemid, userid], (err, result) => {
+
+		if (err)	{
+			throw err;
+		}
+		else if (result.length === 0)	{
+			res.status(404).send({msg: "You are not the vendor of this item."});
+		}
+		else {
+			//Update item.available to 0 aka Not available
+
+			let item_update = "UPDATE Item SET Available = 1 WHERE ItemID = ?";
+
+			db.query(item_update, [itemid], (err2, result2) => {
+
+				if (err2)	{
+					db.rollback(() => {
+						res.status(404).send({msg: "Could not make the item available."});
+					});
+				}
+				else {
+					//Delete item from all carts
+					res.send({msg : "successfully available"});
+
+				}
+
+			});
+		}
+
+	});
+
+});
+
 app.put('/profile', [checkAuthentication, sanitize('zip').toInt()], (req, res, next) => {
 
 	var userid = req.user.userid;
