@@ -945,6 +945,12 @@ app.get('/vendor/items/:name', (req, res, next) => {
 
 })
 
+app.get('/loggedin', (req, res, next) => {
+
+	res.send({user : req.user, isAuthenticated : req.isAuthenticated() });
+
+})
+
 app.get('/vendor/:name', (req, res, next) => {
 
 	var vendorid = req.params.name;
