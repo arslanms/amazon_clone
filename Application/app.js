@@ -624,6 +624,26 @@ app.get('/payment', (req, res, next) => {
 
 });
 
+app.post('/payment/delete', (req, res, next) => {
+
+	var card_num = req.body.card_num
+	var userid = req.user.userid;
+
+	let stmnt = "DELETE FROM Payment WHERE CustomerID = ? AND Card_Num = ?";
+
+	db.query(stmnt, [userid, card_num], (err, result) => {
+
+		if (err)	{
+			throw err;
+		}
+		else {
+			res.send(result);
+		}
+
+	});
+
+});
+
 app.post('/checkout', [check('card_num').exists().withMessage('No Card provided'), check('delivery_type').exists().withMessage('No delivery type provided'),
 	check('shipment_company').exists().withMessage('No shipment company provided')], (req, res, next) => {
 	//We need a payment plan (identified by the card number) and all of the items in the user's shopping cart
