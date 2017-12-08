@@ -607,6 +607,7 @@ app.post('/checkout', (req, res, next) => {
 	var card_num = req.body.card_num;
 	var customerid = req.user.userid;
 	var delivery_type = req.body.delivery_type;
+	var shipment_company = req.body.shipment_company;
 
 	let statement_shoppingcart = "SELECT * FROM `Shopping Cart` WHERE CustomerID = ?";
 
@@ -669,8 +670,9 @@ app.post('/checkout', (req, res, next) => {
 				let order_statement = "INSERT INTO `Order`(`OrderID`, `Shipped_Date`, `Ordered_Date`," + 
 				"`Delivery_Type`, `Tracking_Num`, `Shipment_Company`, `VendorID`, `CustomerID`, `Street`, `ZIP`, `City`, `State`, `Country`," +
 				"`ItemID`, `Quantity`, `Reviewed`) VALUES  (NULL, NULL, CURDATE(), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)";
+				
 				var tracking_num = 124545474764;
-				var shipment_company = 'Quick Boys Inc';
+				
 
 				let vendor_statement = "SELECT UserID FROM Item WHERE Item.ItemID = ?";
 
@@ -756,11 +758,11 @@ app.post('/checkout', (req, res, next) => {
 			});
 			
 		}, function(err)	{
-
+			res.send({status: 1, msg: "Order has been completed."});
 		});
 	});
 
-	res.send({status: 1, msg: "Order has been completed."});
+	
 });
 
 app.post('/review', [sanitize('rating').toInt(), sanitize('order_id').toInt()], (req, res, next) => {
@@ -922,6 +924,41 @@ app.get('/items', (req, res, next) => {
 		}
 
 
+	});
+
+});
+
+app.get('/vendor/items/:name', (req, res, next) => {
+
+	var vendorid = req.params.name;
+
+	let stmnt = "SELECT * FROM Item, Inventory WHERE Inventory.InventoryID = Item.ItemID AND Inventory.VendorID = ? AND Item.UserID = ?";
+
+	db.query(stmnt, [vendorid, vendorid], (err, result) => {
+		if (err) {
+			throw err;
+		}
+		else {
+			res.send(result);
+		}
+	});
+
+})
+
+app.get('/vendor/:name', (req, res, next) => {
+
+	var vendorid = req.params.name;
+
+	let stmnt = "SELECT * FROM Vendor WHERE UserID = ?";
+
+	db.query(stmnt, [vendorid], (err, result) => {
+
+		if (err)	{
+			throw err;
+		}
+		else {
+			res.send(result[0]);
+		}
 	});
 
 });
