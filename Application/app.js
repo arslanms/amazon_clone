@@ -579,6 +579,26 @@ PRIMARY KEY (`Card_Num`),
 
 });
 
+app.get('/payment', (req, res, next) => {
+
+	var customerid = req.user.userid;
+
+	let stmnt = "SELECT * FROM Payment WHERE CustomerID = ?";
+
+	db.query(stmnt, [customerid], (err, result) => {
+
+		if (err)	{
+			throw err;
+		}
+		else {
+			res.send(result);
+
+		}
+
+	});
+
+});
+
 app.post('/checkout', (req, res, next) => {
 	//We need a payment plan (identified by the card number) and all of the items in the user's shopping cart
 	//Drop all of these items from the Shopping Cart table according to the user but need to keep some info for order/order details

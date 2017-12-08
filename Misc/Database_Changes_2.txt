@@ -4,6 +4,7 @@ Item:
 	Product_Name has to be unique
 	Added a foreign key to the vendorID.
 	Add the Available attribute that indicates if the item is available.
+	Changed the Picture field to 150 characters.
 	
 User:
 	Changed 'Last Name' to 'Last_Name'
