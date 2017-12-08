@@ -111,14 +111,11 @@ app.post('/register', [check('userid').exists().withMessage('No UserID provided.
 	check('email').isEmail().withMessage('Must be valid email'), check('phone').exists().withMessage('No phone provided'),
 	check('address').exists().withMessage('No address provided'), check('city').exists().withMessage('No city provided'),
 	check('zip').exists().withMessage('No zip provided'), check('country').exists().withMessage('No country provided'),
-	check('state').exists().withMessage('No state provided').isLength({max:2}).withMessage('State must be 2 characters.'),
+	check('state').exists().withMessage('No state provided').isLength({max:2, min:2}).withMessage('State must be 2 characters.'),
 	sanitize('zip').toInt()], (req, res, next) =>	{
 	var errors = validationResult(req);
 
-	//console.log(req.body);
-
 	if (!errors.isEmpty()) {
-		//return res.status(404).send("Was not able to register");
 		return res.status(422).json({ errors: errors.mapped() });
 	}
 	else	{
@@ -248,13 +245,20 @@ app.get('/logout', (req, res, next) => {
 	});*/
 });
 
-app.post('/cart', [sanitize('itemid').toInt(), sanitize('quantity').toInt()],(req, res, next) => {
+app.post('/cart', [check('itemid').exists().withMessage('No ItemID provided.'), check('quantity').exists().withMessage('No Quantity provided.'),
+ sanitize('itemid').toInt(), sanitize('quantity').toInt()],(req, res, next) => {
 	/*
 	`ItemID` INT UNSIGNED NOT NULL,
   	`CustomerID` VARCHAR(50) NOT NULL,
   	`Quantity` INT UNSIGNED NOT NULL,
 	`CartID` INT UNSIGNED NOT NULL AUTO_INCREMENT
 	*/
+
+		var errors = validationResult(req);
+
+	if (!errors.isEmpty()) {
+		return res.status(422).json({ errors: errors.mapped() });
+	}
 
 	var userid = req.user.userid;
 	var itemid = req.body.itemid;
@@ -355,7 +359,10 @@ app.post('/cart', [sanitize('itemid').toInt(), sanitize('quantity').toInt()],(re
 	});
 });
 
-app.post('/inventory', [sanitize('price').toInt(), sanitize('quantity').toInt()],(req, res, next) => {
+app.post('/inventory', [check('price').exists().withMessage('No Price provided.'), check('quantity').exists().withMessage('No Quantity provided.'),
+	check('prod_name').exists().withMessage('No Product Name provided.'), check('type').exists().withMessage('No Type provided.'),
+	check('prod_desc').exists().withMessage('No Product Description provided.'),check('picture').exists().withMessage('No Picture provided.'),
+	sanitize('price').toInt(), sanitize('quantity').toInt()],(req, res, next) => {
 
 	//Have to add a particular item to both the Item table and the Inventory table
 	/*
@@ -368,6 +375,11 @@ app.post('/inventory', [sanitize('price').toInt(), sanitize('quantity').toInt()]
   `Picture` VARCHAR(50) NULL COMMENT 'Contains the file name of the picture (not the picture itself).',
 PRIMARY KEY (`ItemID`))
 	*/
+		var errors = validationResult(req);
+
+	if (!errors.isEmpty()) {
+		return res.status(422).json({ errors: errors.mapped() });
+	}
 
 	var userid = req.user.userid;
 	var price = req.body.price;
@@ -538,7 +550,13 @@ app.get('/inventory', (req, res, next) => {
 
 });
 
-app.post('/payment', [sanitize('card_num').toInt(), sanitize('card_ccv').toInt(), sanitize('card_date').toInt(),
+app.post('/payment', [check('card_firstname').exists().withMessage('No First Name provided.'), check('card_lastname').exists().withMessage('No Last Name provided.'),
+	check('card_num').exists().withMessage('No Card Number provided.'), check('card_ccv').exists().withMessage('No Card CCV provided.'),
+	check('card_date').exists().withMessage('No Card Date provided.'), check('bill_street').exists().withMessage('No Street provided.'), 
+	check('bill_zip').exists().withMessage('No ZIP provided.'), check('bill_city').exists().withMessage('No City provided.'), 
+	check('bill_state').exists().withMessage('No State provided.'), check('bill_country').exists().withMessage('No Country provided.'),
+	check('card_num').isLength({max:16,min:16}), 
+	sanitize('card_num').toInt(), sanitize('card_ccv').toInt(), sanitize('card_date').toInt(),
 	sanitize('bill_zip').toInt()], (req, res, next) => {
 	/*
 	`Cardholder_FirstName` VARCHAR(50) NOT NULL,
@@ -554,6 +572,12 @@ app.post('/payment', [sanitize('card_num').toInt(), sanitize('card_ccv').toInt()
   `CustomerID` VARCHAR(50) NOT NULL,
 PRIMARY KEY (`Card_Num`),
 	*/
+
+	var errors = validationResult(req);
+
+	if (!errors.isEmpty()) {
+		return res.status(422).json({ errors: errors.mapped() });
+	}
 
 	var customerid = req.user.userid;
 	var card_firstname = req.body.card_firstname;
@@ -600,10 +624,17 @@ app.get('/payment', (req, res, next) => {
 
 });
 
-app.post('/checkout', (req, res, next) => {
+app.post('/checkout', [check('card_num').exists().withMessage('No Card provided'), check('delivery_type').exists().withMessage('No delivery type provided'),
+	check('shipment_company').exists().withMessage('No shipment company provided')], (req, res, next) => {
 	//We need a payment plan (identified by the card number) and all of the items in the user's shopping cart
 	//Drop all of these items from the Shopping Cart table according to the user but need to keep some info for order/order details
 	//Create orders/order details for every item that was in the shopping cart for that user. 
+
+	var errors = validationResult(req);
+
+	if (!errors.isEmpty()) {
+		return res.status(422).json({ errors: errors.mapped() });
+	}
 
 	var card_num = req.body.card_num;
 	var customerid = req.user.userid;
@@ -672,6 +703,7 @@ app.post('/checkout', (req, res, next) => {
 				"`Delivery_Type`, `Tracking_Num`, `Shipment_Company`, `VendorID`, `CustomerID`, `Street`, `ZIP`, `City`, `State`, `Country`," +
 				"`ItemID`, `Quantity`, `Reviewed`) VALUES  (NULL, NULL, CURDATE(), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)";
 				
+				//TODO: Change this tracking number
 				var tracking_num = 124545474764;
 				
 
@@ -767,7 +799,15 @@ app.post('/checkout', (req, res, next) => {
 	
 });
 
-app.post('/review', [sanitize('rating').toInt(), sanitize('order_id').toInt()], (req, res, next) => {
+app.post('/review', [check('rating').exists().withMessage('Rating not provided'), check('review_text').exists().withMessage('Review text not provided'),
+	check('order_id').exists().withMessage('Order ID not provided'),
+	sanitize('rating').toInt(), sanitize('order_id').toInt()], (req, res, next) => {
+
+		var errors = validationResult(req);
+
+	if (!errors.isEmpty()) {
+		return res.status(422).json({ errors: errors.mapped() });
+	}
 
 	var rating = req.body.rating;
 	var review_text = req.body.review_text;
@@ -1006,7 +1046,13 @@ app.get('/items/:id', (req, res, next) => {
 });
 
 
-app.post('/cart/delete', (req, res, next) => {
+app.post('/cart/delete', [check('cartid').exists().withMessage('CartID not provided')],(req, res, next) => {
+
+	var errors = validationResult(req);
+
+	if (!errors.isEmpty()) {
+		return res.status(422).json({ errors: errors.mapped() });
+	}
 
 
 	var cartid = req.body.cartid;
