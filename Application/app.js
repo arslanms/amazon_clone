@@ -141,7 +141,7 @@ app.post('/register', [check('userid').exists().withMessage('No UserID provided.
 
 		db.query(statemenet, [userid, first_name, last_name, email, phone, hash, address, zip, city, state, country, type], (err, result) => {
 			if (err)
-				throw err;
+				return next(err);
 
 			reg_return.User = result;
 
@@ -149,7 +149,7 @@ app.post('/register', [check('userid').exists().withMessage('No UserID provided.
 				let type_statement = "INSERT INTO Customer VALUES(?)";
 				db.query(type_statement, [userid], (err2, result2) => {
 					if (err2)
-						throw err2;
+						return next(err2);
 					reg_return.Type = result;
 					res.send(reg_return);
 				});
@@ -160,7 +160,7 @@ app.post('/register', [check('userid').exists().withMessage('No UserID provided.
 				var store_desc = req.body.store_desc;
 				db.query(type_statement, [userid, store_name, store_desc], (err2, result2) => {
 					if (err2)
-						throw err2;
+						return next(err2);
 					reg_return.Type = result;
 					res.send(reg_return);
 				});
@@ -196,7 +196,7 @@ app.get('/profile', checkAuthentication, (req, res, next) => {
 	db.query(profile_stmnt, [req.user.userid], (err, result) => {
 
 		if (err)	{
-			return res.status(403).send({error: "Could not find this user."});
+			return next(err);
 		}
 		else {
 
@@ -210,7 +210,7 @@ app.get('/profile', checkAuthentication, (req, res, next) => {
 				db.query(vendor_stmnt, [req.user.userid], (err2, result2) => {
 
 					if (err2)	{
-						res.status(404).send({msg: "Could not find this vendor."});
+						return next(err2);
 					}
 					else {
 						profile_ret.Extra = result2[0];
@@ -273,7 +273,7 @@ app.post('/cart', [check('itemid').exists().withMessage('No ItemID provided.'), 
 
 		if (err) {
 			return db.rollback(function() {
-        		throw err;
+        		next(err);
       		});
 		}
 		else if (result.length === 0)	{
@@ -287,7 +287,7 @@ app.post('/cart', [check('itemid').exists().withMessage('No ItemID provided.'), 
 
 				if(err2)	{
 					return db.rollback(function() {
-        				throw err2;
+        				next(err2);
       				});
 				}
 
@@ -299,7 +299,7 @@ app.post('/cart', [check('itemid').exists().withMessage('No ItemID provided.'), 
 
 					if (err4)	{
 						return db.rollback(function() {
-							throw err4;
+							next(err4);
 						});
 					}
 					else if (result4.length === 0)	{
@@ -312,7 +312,7 @@ app.post('/cart', [check('itemid').exists().withMessage('No ItemID provided.'), 
 
 								if (err5)	{
 									return db.rollback(function() {
-										throw err5;
+										next(err5);
 									});
 								}
 								else {
@@ -338,7 +338,7 @@ app.post('/cart', [check('itemid').exists().withMessage('No ItemID provided.'), 
 
 								if(err3) {
 									return db.rollback(function() {
-        								throw err3;
+        								next(err3);
       								});
 								}
 								else {
@@ -394,7 +394,7 @@ PRIMARY KEY (`ItemID`))
 	db.query(statement, [userid], (err, result) => {
 		if (err) {
 			return db.rollback(function() {
-        		throw err;
+        		next(err);
       		});
 		}
 		else if (result.length === 0)	{
@@ -408,7 +408,7 @@ PRIMARY KEY (`ItemID`))
 
 				if (err2)	{
 					return db.rollback(function() {
-						throw err2;
+						next(err2);
 					});
 				}
 
@@ -418,7 +418,7 @@ PRIMARY KEY (`ItemID`))
 
 					if (err3)	{
 						return db.rollback(function() {
-							throw err3;
+							next(err3);
 						});
 					}
 
@@ -437,7 +437,7 @@ PRIMARY KEY (`ItemID`))
 
 						if (err4)	{
 							return db.rollback(function() {
-								throw err4;
+								next(err4);
 							});
 						}
 
@@ -463,7 +463,7 @@ app.get('/cart', (req, res, next) => {
 
 	db.query(statement, [customerid], (err, result) => {
 		if (err)
-			throw err;
+			next(err);
 		else {
 
 			var ret_arr = Array();
@@ -511,7 +511,7 @@ app.get('/inventory', (req, res, next) => {
 
 	db.query(statement, [vendorid], (err, result) => {
 		if (err)
-			throw err;
+			next(err);
 		else {
 
 			var ret_arr = Array();
@@ -596,7 +596,7 @@ PRIMARY KEY (`Card_Num`),
 	db.query(statement, [card_firstname, card_lastname, card_num, card_ccv, card_date, bill_street, bill_zip, bill_city, bill_state, bill_country, customerid], (err, result) => {
 
 		if (err)
-			throw err;
+			next(err);
 
 		res.send(result);
 
@@ -613,7 +613,7 @@ app.get('/payment', (req, res, next) => {
 	db.query(stmnt, [customerid], (err, result) => {
 
 		if (err)	{
-			throw err;
+			next(err);
 		}
 		else {
 			res.send(result);
@@ -634,7 +634,7 @@ app.post('/payment/delete', (req, res, next) => {
 	db.query(stmnt, [userid, card_num], (err, result) => {
 
 		if (err)	{
-			throw err;
+			next(err);
 		}
 		else {
 			res.send(result);
@@ -669,7 +669,7 @@ app.post('/checkout', [check('card_num').exists().withMessage('No Card provided'
 
 		if (err)	{
 			return db.rollback(function() {
-				throw err;
+				next(err);
 			});
 		}
 
@@ -712,7 +712,7 @@ app.post('/checkout', [check('card_num').exists().withMessage('No Card provided'
 
 				if (err2)	{
 					return db.rollback(function() {
-						return callback(err2);
+						next(err2);
 					});
 				} else {
 				
@@ -733,7 +733,7 @@ app.post('/checkout', [check('card_num').exists().withMessage('No Card provided'
 
 					if(err6)	{
 						return db.rollback(function() {
-							return callback(err6);
+							next(err6);
 						});						
 					} else {
 					
@@ -746,7 +746,7 @@ app.post('/checkout', [check('card_num').exists().withMessage('No Card provided'
 
 					if (err3)	{
 						return db.rollback(function() {
-							return callback(err3);
+							next(err3);
 						});
 					}
 					else {
@@ -756,7 +756,7 @@ app.post('/checkout', [check('card_num').exists().withMessage('No Card provided'
 
 						if (err4)	{
 							return db.rollback(function() {
-								return callback(err4);
+								next(err4);
 							});
 						}
 						else {
@@ -772,7 +772,7 @@ app.post('/checkout', [check('card_num').exists().withMessage('No Card provided'
 
 								if (err5)	{
 									db.rollback(function() {
-										return callback(err5);
+										next(err5);
 									});
 								}
 								else {
@@ -783,7 +783,7 @@ app.post('/checkout', [check('card_num').exists().withMessage('No Card provided'
 
 										if (err7)	{
 											return db.rollback(() => {
-												return callback(err7);
+												next(err7);
 											});
 										}
 										else {
@@ -842,7 +842,7 @@ app.post('/review', [check('rating').exists().withMessage('Rating not provided')
 
 		if (err)	{
 			return db.rollback(function() {
-				throw err;
+				next(err);
 			});
 		}
 		else if (result.length == 0)	{
@@ -858,7 +858,7 @@ app.post('/review', [check('rating').exists().withMessage('Rating not provided')
 				if (err2)	{
 					
 					return db.rollback(function() {
-						throw err2;
+						next(err2);
 					});
 				}
 				else if (result2[0].Reviewed === 1)	{
@@ -877,7 +877,7 @@ app.post('/review', [check('rating').exists().withMessage('Rating not provided')
 						if (err3)	{
 							
 							return db.rollback(function() {
-								throw err3;
+								next(err3);
 							});
 						}
 						else {
@@ -888,7 +888,7 @@ app.post('/review', [check('rating').exists().withMessage('Rating not provided')
 								if (err4)	{
 									
 									return db.rollback(() => {
-										throw err4;
+										next(err4);
 									});
 								}
 
@@ -915,7 +915,7 @@ app.get('/review/:id', (req, res, next) => {
 	db.query(order_stmnt, [orderid], (err, result) => {
 
 		if (err)	{
-			throw err;
+			next(err);
 		}
 		else {
 
@@ -926,7 +926,7 @@ app.get('/review/:id', (req, res, next) => {
 			db.query(item_stmnt, [itemid], (err2, result2) => {
 
 				if (err2)	{
-					throw err2;
+					next(err2);
 				}
 				else {
 					res.send(result2[0]);
@@ -949,7 +949,7 @@ app.get('/items', (req, res, next) => {
 	db.query(statement, (err, result) => {
 
 		if (err)
-			throw err;
+			next(err);
 		else {
 			async.forEachOf(result, function(value, key, callback)	{
 
@@ -995,7 +995,7 @@ app.get('/vendor/items/:name', (req, res, next) => {
 
 	db.query(stmnt, [vendorid, vendorid], (err, result) => {
 		if (err) {
-			throw err;
+			next(err);
 		}
 		else {
 			res.send(result);
@@ -1019,7 +1019,7 @@ app.get('/vendor/:name', (req, res, next) => {
 	db.query(stmnt, [vendorid], (err, result) => {
 
 		if (err)	{
-			throw err;
+			next(err);
 		}
 		else {
 			res.send(result[0]);
@@ -1038,7 +1038,7 @@ app.get('/items/:id', (req, res, next) => {
 	db.query(statement, [id], (err, result) => {
 
 		if (err)
-			throw err;
+			next(err);
 		else {
 
 			item_obj.item_desc = result[0];
@@ -1048,7 +1048,7 @@ app.get('/items/:id', (req, res, next) => {
 			db.query(review_stmnt, [result[0].ItemID], (err2, result2) => {
 
 				if (err2)
-					throw err2;
+					next(err2);
 				else {
 
 					item_obj.reviews = result2;
@@ -1083,7 +1083,7 @@ app.post('/cart/delete', [check('cartid').exists().withMessage('CartID not provi
 	db.query(statement, [customer], (err, result) => {
 
 		if (err)	
-			throw err;
+			next(err);
 		else if (result.length == 0)	{
 			return res.status(403).send({error: "You are not a customer. Can't delete from a cart."});
 		}
@@ -1095,7 +1095,7 @@ app.post('/cart/delete', [check('cartid').exists().withMessage('CartID not provi
 
 				if (err2)	{
 					return db.rollback(() => {
-						throw err2;
+						next(err2);
 					});
 				}
 
@@ -1120,7 +1120,7 @@ app.get('/profile/:userid', (req, res, next) => {
 	db.query(profile_stmnt, [userid], (err, result) => {
 
 		if (err)	{
-			throw err;
+			next(err);
 		}
 		else {
 
@@ -1134,7 +1134,7 @@ app.get('/profile/:userid', (req, res, next) => {
 				db.query(vendor_stmnt, [userid], (err2, result2) => {
 
 					if (err2)	{
-						throw err2
+						next(err2);
 					}
 					else {
 						profile_ret.Extra = result2[0];
@@ -1165,7 +1165,7 @@ app.get('/orders', (req, res, next) => {
 	db.query(check_stmnt, [userid], (err, result) => {
 
 		if (err)
-			throw err;
+			next(err);
 		else if (result.length === 0)
 			return res.status(403).send({error: "You are not a customer. Cannot view orders."});
 		else {
@@ -1175,7 +1175,7 @@ app.get('/orders', (req, res, next) => {
 			db.query(order_stmnt, [userid], (err2, result2) => {
 
 				if (err2)
-					throw err2;
+					next(err2);
 				else {
 					//res.send(result2);
 
@@ -1239,7 +1239,7 @@ app.delete('/items/:id', (req, res, next) => {
 	db.query(vendor_check, [itemid, userid], (err, result) => {
 
 		if (err)	{
-			throw err;
+			next(err);
 		}
 		else if (result.length === 0)	{
 			return res.status(403).send({error: "You are not the vendor of this item"});
@@ -1253,7 +1253,7 @@ app.delete('/items/:id', (req, res, next) => {
 
 				if (err2)	{
 					return db.rollback(() => {
-						throw err2;
+						next(err2);
 					});
 				}
 				else {
@@ -1265,7 +1265,7 @@ app.delete('/items/:id', (req, res, next) => {
 
 						if (err3) {
 							return db.rollback(() => {
-								throw err3;
+								next(err3);
 							});
 						}
 						else {
@@ -1304,7 +1304,7 @@ app.put('/items/:id', [sanitize('price').toInt(), sanitize('quantity').toInt()],
 
 			if (err)	{
 				db.rollback(() => {
-					throw err;
+					next(err);
 				});
 			}
 			else {
@@ -1339,7 +1339,7 @@ app.post('/available/:id', (req, res, next) => {
 	db.query(vendor_check, [itemid, userid], (err, result) => {
 
 		if (err)	{
-			throw err;
+			next(err);
 		}
 		else if (result.length === 0)	{
 			return res.status(403).send({error: "You are not the vendor of this item."});
@@ -1353,7 +1353,7 @@ app.post('/available/:id', (req, res, next) => {
 
 				if (err2)	{
 					return db.rollback(() => {
-						throw err2;
+						next(err2);
 					});
 				}
 				else {
@@ -1389,7 +1389,7 @@ app.put('/profile', [checkAuthentication, sanitize('zip').toInt()], (req, res, n
 	db.query(acc_type, [userid], (err, result) => {
 
 		if (err)
-			throw err;
+			next(err);
 		else {
 			var type = result[0].Type;
 
@@ -1400,7 +1400,7 @@ app.put('/profile', [checkAuthentication, sanitize('zip').toInt()], (req, res, n
 
 				if (err2) {
 					return db.rollback(() => {
-						throw err2;
+						next(err2);
 					});
 				}
 				else {
@@ -1418,7 +1418,7 @@ app.put('/profile', [checkAuthentication, sanitize('zip').toInt()], (req, res, n
 
 							if (err3)	{
 								return db.rollback(() => {
-									throw err3;	
+									next(err3);
 								})
 							}
 							else {
