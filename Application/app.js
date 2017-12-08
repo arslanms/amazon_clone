@@ -145,6 +145,7 @@ app.post('/register', [check('userid').exists().withMessage('No UserID provided.
 		db.query(statemenet, [userid, first_name, last_name, email, phone, hash, address, zip, city, state, country, type], (err, result) => {
 			if (err)
 				throw err;
+
 			reg_return.User = result;
 
 			if (type == 'Customer')	{
@@ -168,13 +169,13 @@ app.post('/register', [check('userid').exists().withMessage('No UserID provided.
 				});
 			}
 			else {
-				let type_statement = "INSERT INTO Admin VALUES(?)";
+				l/*et type_statement = "INSERT INTO Admin VALUES(?)";
 				db.query(type_statement, [userid], (err2, result2) => {
 					if (err2)
 						throw err2;
 					reg_return.Type = result;
 					res.send(reg_return);
-				});
+				});*/
 			}
 
 
@@ -198,7 +199,7 @@ app.get('/profile', checkAuthentication, (req, res, next) => {
 	db.query(profile_stmnt, [req.user.userid], (err, result) => {
 
 		if (err)	{
-			res.status(404).send({msg: "Could not find this user."});
+			return res.status(403).send({error: "Could not find this user."});
 		}
 		else {
 
@@ -272,7 +273,7 @@ app.post('/cart', [sanitize('itemid').toInt(), sanitize('quantity').toInt()],(re
       		});
 		}
 		else if (result.length === 0)	{
-			res.send({msg: "Is not a customer"});
+			return res.status(403).send({error: "Is not a customer"});
 		}
 		else {
 
@@ -318,7 +319,7 @@ app.post('/cart', [sanitize('itemid').toInt(), sanitize('quantity').toInt()],(re
 
 						}
 						else {
-							res.status(404).send({msg : "Not enough quantity"});
+							return res.status(403).send({error: "Not enough quantity."});
 						}
 
 					}
@@ -344,7 +345,7 @@ app.post('/cart', [sanitize('itemid').toInt(), sanitize('quantity').toInt()],(re
 							});
 						}
 						else {
-							res.status(404).send({msg:"Not enough quantity"});
+							return res.status(403).send({error: "Not enough quantity."});
 						}
 
 					}
@@ -385,7 +386,7 @@ PRIMARY KEY (`ItemID`))
       		});
 		}
 		else if (result.length === 0)	{
-			res.send({error: "Is not a vendor"});
+			return res.status(403).send({error: "This user is not a vendor."});
 		}
 		else {
 
@@ -423,7 +424,7 @@ PRIMARY KEY (`ItemID`))
 					db.query(inventory_statement, [itemid, userid, quantity], (err4, result4) => {
 
 						if (err4)	{
-							db.rollback(function() {
+							return db.rollback(function() {
 								throw err4;
 							});
 						}
@@ -616,7 +617,7 @@ app.post('/checkout', (req, res, next) => {
 	db.query(statement_shoppingcart, [customerid], (err, result) => {
 
 		if (err)	{
-			db.rollback(function() {
+			return db.rollback(function() {
 				throw err;
 			});
 		}
@@ -659,7 +660,7 @@ app.post('/checkout', (req, res, next) => {
 			db.query(payment_info, [customerid, card_num], (err2, result2) => {
 
 				if (err2)	{
-					db.rollback(function() {
+					return db.rollback(function() {
 						return callback(err2);
 					});
 				} else {
@@ -679,7 +680,7 @@ app.post('/checkout', (req, res, next) => {
 				db.query(vendor_statement, [value.ItemID], (err6, result6) => {
 
 					if(err6)	{
-						db.rollback(function() {
+						return db.rollback(function() {
 							return callback(err6);
 						});						
 					} else {
@@ -692,7 +693,7 @@ app.post('/checkout', (req, res, next) => {
 
 
 					if (err3)	{
-						db.rollback(function() {
+						return db.rollback(function() {
 							return callback(err3);
 						});
 					}
@@ -702,7 +703,7 @@ app.post('/checkout', (req, res, next) => {
 					db.query(quantity_statement, [value.ItemID], (err4, result4) => {
 
 						if (err4)	{
-							db.rollback(function() {
+							return db.rollback(function() {
 								return callback(err4);
 							});
 						}
@@ -729,7 +730,7 @@ app.post('/checkout', (req, res, next) => {
 									db.query(remove_cart_stmnt, [customerid], (err7, result7) => {
 
 										if (err7)	{
-											db.rollback(() => {
+											return db.rollback(() => {
 												return callback(err7);
 											});
 										}
@@ -743,7 +744,8 @@ app.post('/checkout', (req, res, next) => {
 						}
 						else {
 
-							db.rollback(() => {
+							return db.rollback(() => {
+								res.status(403).send({error: "Not enough quantity for an item. Try again."});
 								callback();
 							});
 
@@ -779,15 +781,12 @@ app.post('/review', [sanitize('rating').toInt(), sanitize('order_id').toInt()], 
 	db.query(check_customer_stmnt, [customer], (err, result) => {
 
 		if (err)	{
-			console.log("HERE");
-			db.rollback(function() {
+			return db.rollback(function() {
 				throw err;
 			});
 		}
 		else if (result.length == 0)	{
-			db.rollback(function() {
-				res.send({status:-1, msg: "This account is not a customer. Cannot leave a review."});
-			});
+			return res.status(403).send({error: "This account is not a customer. Cannot leave a review."});
 		}
 		else {
 
@@ -797,13 +796,13 @@ app.post('/review', [sanitize('rating').toInt(), sanitize('order_id').toInt()], 
 
 
 				if (err2)	{
-					console.log("HERE");
-					db.rollback(function() {
+					
+					return db.rollback(function() {
 						throw err2;
 					});
 				}
 				else if (result2[0].Reviewed === 1)	{
-					res.send({status: -1, msg: "Sorry you have reviewed already."});
+					return res.status(403).send({error: "This user has reviewed already."});
 				}
 				else {
 				
@@ -816,8 +815,8 @@ app.post('/review', [sanitize('rating').toInt(), sanitize('order_id').toInt()], 
 					db.query(review_stmnt, [customer, vendor, order_id, rating, review_text, itemid], (err3, result3) => {
 
 						if (err3)	{
-							console.log("HERE");
-							db.rollback(function() {
+							
+							return db.rollback(function() {
 								throw err3;
 							});
 						}
@@ -827,8 +826,8 @@ app.post('/review', [sanitize('rating').toInt(), sanitize('order_id').toInt()], 
 							db.query(update_order_stmnt, [order_id], (err4, result4) => {
 
 								if (err4)	{
-									console.log("HERE");
-									db.rollback(() => {
+									
+									return db.rollback(() => {
 										throw err4;
 									});
 								}
@@ -1020,7 +1019,7 @@ app.post('/cart/delete', (req, res, next) => {
 		if (err)	
 			throw err;
 		else if (result.length == 0)	{
-			res.send({status:-1, msg: "You are not a customer."});
+			return res.status(403).send({error: "You are not a customer. Can't delete from a cart."});
 		}
 		else {
 
@@ -1029,8 +1028,8 @@ app.post('/cart/delete', (req, res, next) => {
 			db.query(drop_stmnt, [cartid], (err2, result2) => {
 
 				if (err2)	{
-					db.rollback(() => {
-						res.send({status:-1, msg: "Could not delete from cart."});
+					return db.rollback(() => {
+						throw err2;
 					});
 				}
 
@@ -1055,7 +1054,7 @@ app.get('/profile/:userid', (req, res, next) => {
 	db.query(profile_stmnt, [userid], (err, result) => {
 
 		if (err)	{
-			res.status(404).send({msg: "Could not find this user."});
+			throw err;
 		}
 		else {
 
@@ -1069,7 +1068,7 @@ app.get('/profile/:userid', (req, res, next) => {
 				db.query(vendor_stmnt, [userid], (err2, result2) => {
 
 					if (err2)	{
-						res.status(404).send({msg: "Could not find this vendor."});
+						throw err2
 					}
 					else {
 						profile_ret.Extra = result2[0];
@@ -1102,7 +1101,7 @@ app.get('/orders', (req, res, next) => {
 		if (err)
 			throw err;
 		else if (result.length === 0)
-			res.status(404).send({msg: "You are not a customer. Cannot view orders."});
+			return res.status(403).send({error: "You are not a customer. Cannot view orders."});
 		else {
 
 			let order_stmnt = "SELECT * FROM `Order` WHERE `Order`.CustomerID = ?";
@@ -1129,7 +1128,7 @@ app.get('/orders', (req, res, next) => {
 						db.query(item_info_stmnt, [itemid], (err3, result3) => {
 
 							if (err3)	{
-								db.rollback(() => {
+								return db.rollback(() => {
 									callback(err3);
 								});
 							}
@@ -1177,7 +1176,7 @@ app.delete('/items/:id', (req, res, next) => {
 			throw err;
 		}
 		else if (result.length === 0)	{
-			res.status(404).send({msg: "You are not the vendor of this item."});
+			return res.status(403).send({error: "You are not the vendor of this item"});
 		}
 		else {
 			//Update item.available to 0 aka Not available
@@ -1187,8 +1186,8 @@ app.delete('/items/:id', (req, res, next) => {
 			db.query(item_update, [itemid], (err2, result2) => {
 
 				if (err2)	{
-					db.rollback(() => {
-						res.status(404).send({msg: "Could not make the item unavailable."});
+					return db.rollback(() => {
+						throw err2;
 					});
 				}
 				else {
@@ -1199,8 +1198,8 @@ app.delete('/items/:id', (req, res, next) => {
 					db.query(cart_delete, [itemid], (err3, result3) => {
 
 						if (err3) {
-							db.rollback(() => {
-								res.status(404).send({msg: "Could not delete from carts."});
+							return db.rollback(() => {
+								throw err3;
 							});
 						}
 						else {
@@ -1277,7 +1276,7 @@ app.post('/available/:id', (req, res, next) => {
 			throw err;
 		}
 		else if (result.length === 0)	{
-			res.status(404).send({msg: "You are not the vendor of this item."});
+			return res.status(403).send({error: "You are not the vendor of this item."});
 		}
 		else {
 			//Update item.available to 0 aka Not available
@@ -1287,8 +1286,8 @@ app.post('/available/:id', (req, res, next) => {
 			db.query(item_update, [itemid], (err2, result2) => {
 
 				if (err2)	{
-					db.rollback(() => {
-						res.status(404).send({msg: "Could not make the item available."});
+					return db.rollback(() => {
+						throw err2;
 					});
 				}
 				else {
@@ -1334,7 +1333,7 @@ app.put('/profile', [checkAuthentication, sanitize('zip').toInt()], (req, res, n
 			db.query(customer_update, [first_name, last_name, email, phone, password, street, city, zip, state, country, userid], (err2, result2) => {
 
 				if (err2) {
-					db.rollback(() => {
+					return db.rollback(() => {
 						throw err2;
 					});
 				}
@@ -1352,7 +1351,7 @@ app.put('/profile', [checkAuthentication, sanitize('zip').toInt()], (req, res, n
 						db.query(vendor_update, [store_name, store_desc, userid], (err3, result3) => {
 
 							if (err3)	{
-								db.rollback(() => {
+								return db.rollback(() => {
 									throw err3;	
 								})
 							}
